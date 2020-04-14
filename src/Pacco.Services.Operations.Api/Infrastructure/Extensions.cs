@@ -21,7 +21,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Pacco.Services.Operations.Api.Handlers;
+using Pacco.Services.Operations.Api.QoS;
 using Pacco.Services.Operations.Api.Services;
+using Pacco.Services.Operations.Api.Services.TimeProviding;
 using Pacco.Services.Operations.Api.Types;
 
 namespace Pacco.Services.Operations.Api.Infrastructure
@@ -49,13 +51,18 @@ namespace Pacco.Services.Operations.Api.Infrastructure
         {
             var requestsOptions = builder.GetOptions<RequestsOptions>("requests");
             builder.Services.AddSingleton(requestsOptions);
-            builder.Services.AddTransient<ICommandHandler<ICommand>, GenericCommandHandler<ICommand>>()
+            builder.Services
+                .AddTransient<ICommandHandler<ICommand>, GenericCommandHandler<ICommand>>()
                 .AddTransient<IEventHandler<IEvent>, GenericEventHandler<IEvent>>()
                 .AddTransient<IEventHandler<IRejectedEvent>, GenericRejectedEventHandler<IRejectedEvent>>()
                 .AddTransient<IHubService, HubService>()
                 .AddTransient<IHubWrapper, HubWrapper>()
-                .AddSingleton<IOperationsService, OperationsService>();
+                .AddSingleton<IOperationsService, OperationsService>()
+                .AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddGrpc();
+            builder.Services
+                .AddQuartz()
+                .AddQoSViolationChecker(requestsOptions);
 
             return builder
                 .AddErrorHandler<ExceptionToResponseMapper>()
