@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json;
@@ -11,11 +12,13 @@ namespace Pacco.Services.Operations.Api.Services
     public class OperationsService : IOperationsService
     {
         private readonly IDistributedCache _cache;
+        private readonly IPendingOperationsService _pendingOperationsService;
         private readonly RequestsOptions _options;
 
-        public OperationsService(IDistributedCache cache, RequestsOptions options)
+        public OperationsService(IDistributedCache cache, IPendingOperationsService pendingOperationsService, RequestsOptions options)
         {
             _cache = cache;
+            _pendingOperationsService = pendingOperationsService;
             _options = options;
         }
 
@@ -54,9 +57,23 @@ namespace Pacco.Services.Operations.Api.Services
                     SlidingExpiration = TimeSpan.FromSeconds(_options.ExpirySeconds)
                 });
 
+            HandlePendingRequests(operation);
+
             OperationUpdated?.Invoke(this, new OperationUpdatedEventArgs(operation));
 
             return (true, operation);
+        }
+
+        private void HandlePendingRequests(OperationDto operation)
+        {
+            if (operation.State == OperationState.Pending)
+            {
+                _pendingOperationsService.AddOrUpdate(operation);
+            }
+            else
+            {
+                _pendingOperationsService.Remove(operation.Id);
+            }
         }
 
         private static string GetKey(string id) => $"requests:{id}";
