@@ -13,6 +13,7 @@ using Convey.MessageBrokers.RabbitMQ;
 using Convey.Metrics.AppMetrics;
 using Convey.Persistence.MongoDB;
 using Convey.Persistence.Redis;
+using Convey.QoS.Violation;
 using Convey.Tracing.Jaeger;
 using Convey.Tracing.Jaeger.RabbitMQ;
 using Convey.WebApi;
@@ -60,6 +61,8 @@ namespace Pacco.Services.Operations.Api.Infrastructure
                 .AddSingleton<IOperationsService, OperationsService>()
                 .AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddGrpc();
+
+            builder.AddQoSViolationHelpers();
             builder.Services
                 .AddQuartz()
                 .AddQoSViolationChecker(requestsOptions);

@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Convey.QoS.Violation;
+using Convey.QoS.Violation.Act;
 using Microsoft.Extensions.Logging;
 using Pacco.Services.Operations.Api.Infrastructure;
 
@@ -13,16 +15,19 @@ namespace Pacco.Services.Operations.Api.QoS.Job
     public class CheckRequestStatusJob : IJob
     {
         private readonly IPendingOperationsService _pendingOperationsService;
+        private readonly IQoSViolateRaiser _qoSViolateRaiser;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly int _handlingRequestsOvertimeInSeconds;
         private readonly ILogger<CheckRequestStatusJob> _logger;
         private readonly ICollection<string> _overtimeOperations = new List<string>();
 
-        public CheckRequestStatusJob(IPendingOperationsService pendingOperationsService, IDateTimeProvider dateTimeProvider, RequestsOptions requestsOptions, ILogger<CheckRequestStatusJob> logger)
+        public CheckRequestStatusJob(IPendingOperationsService pendingOperationsService, IDateTimeProvider dateTimeProvider, 
+            RequestsOptions requestsOptions, ILogger<CheckRequestStatusJob> logger, IQoSViolateRaiser qoSViolateRaiser)
         {
             _pendingOperationsService = pendingOperationsService;
             _dateTimeProvider = dateTimeProvider;
             _logger = logger;
+            _qoSViolateRaiser = qoSViolateRaiser;
 
             _handlingRequestsOvertimeInSeconds = requestsOptions.MaxHandlingOperationSeconds;
         }
@@ -36,9 +41,8 @@ namespace Pacco.Services.Operations.Api.QoS.Job
             {
                 if (DidHandlingRequestOvertime(currentDate, startOperationTime))
                 {
-                    // Raise QoSViolation
-                    _logger.LogWarning($"Request with Id {id} and name {operationName} " +
-                                       "still is not full handled. QoS Violation raised.");
+                    _logger.LogWarning($"Request with Id {id} and name {operationName} still is not full handled.");
+                    _qoSViolateRaiser.Raise(ViolationType.NotFullyHandledOperation);
                     _overtimeOperations.Add(id);
                 }
             }
