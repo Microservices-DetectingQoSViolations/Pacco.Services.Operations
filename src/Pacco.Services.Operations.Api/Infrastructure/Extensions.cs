@@ -14,6 +14,7 @@ using Convey.Metrics.AppMetrics;
 using Convey.Persistence.MongoDB;
 using Convey.Persistence.Redis;
 using Convey.QoS.Violation;
+using Convey.QoS.Violation.Runtime;
 using Convey.Tracing.Jaeger;
 using Convey.Tracing.Jaeger.RabbitMQ;
 using Convey.WebApi;
@@ -62,7 +63,9 @@ namespace Pacco.Services.Operations.Api.Infrastructure
                 .AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddGrpc();
 
-            builder.AddQoSViolationHelpers();
+            builder.AddQoSViolationHelpers()
+                .AddRuntimeMetrics();
+
             builder.Services
                 .AddQuartz()
                 .AddQoSViolationChecker(requestsOptions);
@@ -93,6 +96,7 @@ namespace Pacco.Services.Operations.Api.Infrastructure
                 .UseJaeger()
                 .UseConvey()
                 .UseMetrics()
+                .UseRuntimeMetrics()
                 .UseStaticFiles()
                 .UseRabbitMq()
                 .SubscribeMessages();
