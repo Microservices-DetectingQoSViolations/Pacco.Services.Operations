@@ -2,6 +2,7 @@
 using Convey;
 using Convey.Secrets.Vault;
 using Convey.Logging;
+using Convey.QoS.Violation.Runtime;
 using Convey.Types;
 using Convey.WebApi;
 using Microsoft.AspNetCore;
@@ -45,7 +46,9 @@ namespace Pacco.Services.Operations.Api
                     {
                         endpoints.MapHub<PaccoHub>("/pacco");
                         endpoints.MapGrpcService<GrpcServiceHost>();
-                    }))
+                    })
+                    .UseRuntimeMetrics()
+                )
                 .UseLogging()
                 .UseVault()
                 .Build()

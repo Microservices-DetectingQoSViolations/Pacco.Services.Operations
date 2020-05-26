@@ -96,7 +96,6 @@ namespace Pacco.Services.Operations.Api.Infrastructure
                 .UseJaeger()
                 .UseConvey()
                 .UseMetrics()
-                .UseRuntimeMetrics()
                 .UseStaticFiles()
                 .UseRabbitMq()
                 .SubscribeMessages();
